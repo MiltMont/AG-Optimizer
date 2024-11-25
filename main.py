@@ -6,6 +6,7 @@ import numpy as np
 import sys
 from flags import FLAGS
 from utils import verify_source_file
+import  matplotlib.pyplot as plt
 
 def compile_and_measure(flags):
     """Compile the source file with given flags and return file size."""
@@ -66,7 +67,7 @@ def create_toolbox(source_file):
     
     return toolbox
 
-def optimize_flags(source_file, population_size=50, generations=5):
+def optimize_flags(source_file, population_size=50, generations=5, plot_file="file_size_plot.png"):
     """Main optimization function."""
     toolbox = create_toolbox(source_file)
     
@@ -80,15 +81,50 @@ def optimize_flags(source_file, population_size=50, generations=5):
     stats.register("min", np.min)
     stats.register("max", np.max)
     
-    # Run the evolution
-    pop, _ = algorithms.eaSimple(pop, toolbox,
-                                     cxpb=0.7,  # crossover probability
-                                     mutpb=0.2,  # mutation probability
-                                     ngen=generations,
-                                     stats=stats,
-                                     halloffame=hof,
+    # Storage for file size per generation 
+    file_sizes_per_generation = []
+
+    # Run the evolution 
+    for gen in range(generations):
+        # Evaluate population and perform genetic operations
+        pop, _ = algorithms.eaSimple(pop, toolbox, 
+                                     cxpb=0.7, #crossover probability 
+                                     mutpb=0.2, # Mutation probability
+                                     ngen=1, # Run one generation at a time 
+                                     stats=stats, 
+                                     halloffame=hof, 
                                      verbose=True)
+
+        # Record file size statistics for this generation 
+        gen_sizes = [ind.fitness.values[0] for ind in pop]
+        min_size = np.min(gen_sizes)
+        file_sizes_per_generation.append(min_size)
+
+        # Print progress 
+        print(f"Generation {gen + 1}: Min Size = {min_size} bytes")
+
+    # # Run the evolution
+    # pop, _ = algorithms.eaSimple(pop, toolbox,
+    #                                  cxpb=0.7,  # crossover probability
+    #                                  mutpb=0.2,  # mutation probability
+    #                                  ngen=generations,
+    #                                  stats=stats,
+    #                                  halloffame=hof,
+    #                                  verbose=True)
     
+    # Plot file size reduction 
+    plt.figure(figsize=(10,6))
+    plt.plot(range(1, generations + 1), file_sizes_per_generation, marker='o', label='Min Size per Generation')
+    plt.xlabel("Generation")
+    plt.ylabel("Compiled File Size (bytes)")
+    plt.title("File Size Across Generations")
+    plt.legend()
+    plt.grid()
+    
+    # Save plot file
+    plt.savefig(plot_file)
+    print(f"Plot saved as {plot_file}")
+
     # Get best flags
     best_individual = hof[0]
     best_flags = [flag for flag, active in zip(FLAGS, best_individual) if active]
