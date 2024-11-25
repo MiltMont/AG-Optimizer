@@ -4,38 +4,8 @@ import os
 from deap import base, creator, tools, algorithms
 import numpy as np
 import sys
-
-class CompilationError(Exception):
-    """Custom exception for compilation-related errors."""
-    pass
-
-class FileNotFoundError(Exception):
-    """Custom exception for missing source file."""
-    pass
-
-# Define possible GCC optimization flags
-FLAGS = [
-    '-O0', '-O1', '-O2', '-O3', '-Os', '-Ofast',
-    '-fdata-sections', '-ffunction-sections',
-    '-fno-exceptions', '-fno-rtti',
-    '-fomit-frame-pointer', '-fno-inline',
-    '-flto', '-fno-fat-lto-objects',
-    '-foptimize-strlen', '-fdelete-null-pointer-checks',
-    '-ffast-math', '-fno-builtin'
-]
-
-def verify_source_file(filename):
-    """Verify that the source file exists and is accessible."""
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"Source file '{filename}' not found!")
-    if not os.path.isfile(filename):
-        raise FileNotFoundError(f"'{filename}' is not a regular file!")
-    if not os.access(filename, os.R_OK):
-        raise FileNotFoundError(f"Source file '{filename}' is not readable!")
-    
-    # Check if it's a C source file
-    if not filename.endswith(('.c', '.cpp')):
-        raise FileNotFoundError(f"File '{filename}' does not appear to be a C/C++ source file!")
+from flags import FLAGS
+from utils import verify_source_file
 
 def compile_and_measure(flags):
     """Compile the source file with given flags and return file size."""
