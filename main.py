@@ -64,11 +64,7 @@ def compile_and_measure(flags):
         print(f"Error during compilation: {e}")
         return float('inf')
 
-# Create fitness and individual classes
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMin)
-
-def evalFlags(individual):
+def eval_flags(individual):
     """Evaluate the fitness of an individual (set of flags)."""
     # Convert boolean values to actual flags
     active_flags = [flag for flag, active in zip(FLAGS, individual) if active]
@@ -81,7 +77,7 @@ def evalFlags(individual):
     size = compile_and_measure(active_flags)
     return size,
 
-def createToolbox(source_file):
+def create_toolbox(source_file):
     toolbox = base.Toolbox()
     
     # Attribute generator: each flag is either used (1) or not (0)
@@ -93,7 +89,7 @@ def createToolbox(source_file):
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     
     # Genetic operators
-    toolbox.register("evaluate", evalFlags)
+    toolbox.register("evaluate", eval_flags)
     toolbox.register("mate", tools.cxTwoPoint)
     toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
     toolbox.register("select", tools.selTournament, tournsize=3)
@@ -102,7 +98,7 @@ def createToolbox(source_file):
 
 def optimize_flags(source_file, population_size=50, generations=5):
     """Main optimization function."""
-    toolbox = createToolbox(source_file)
+    toolbox = create_toolbox(source_file)
     
     # Create initial population
     pop = toolbox.population(n=population_size)
@@ -138,6 +134,10 @@ def main():
     global source_file
     source_file = sys.argv[1]
     
+    # Create fitness and individual classes
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.FitnessMin)
+
     try:
         # Verify source file exists and is accessible
         verify_source_file(source_file)
