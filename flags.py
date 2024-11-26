@@ -1,6 +1,7 @@
 
 # Define possible GCC optimization flags
 FLAGS = [
+    '-Os',
     '-faggressive-loop-optimizations', '-falign-functions', 
     '-falign-loops', '-fassociative-math', 
     '-fdata-sections', '-ffunction-sections',
@@ -98,7 +99,6 @@ FLAGS = [
   '-fvar-tracking-assignments',
   '-fvar-tracking-assignments-toggle',
   '-fvar-tracking-uninit',
-  '-fvariable-expansion-in-unroller'
-]
+  '-fvariable-expansion-in-unroller',]
 
 
