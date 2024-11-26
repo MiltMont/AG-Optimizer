@@ -57,7 +57,8 @@ def eval_flags(individual, source_file):
     
     # Measure file size with these flags
     size = compile_and_measure(active_flags, source_file)
-    return size,
+    penalty = len(active_flags)*0.01
+    return size + penalty,
 
 def create_toolbox(source_file):
     toolbox = base.Toolbox()
@@ -73,19 +74,25 @@ def create_toolbox(source_file):
     # Genetic operators
     partial = lambda y: eval_flags(y, source_file)
     toolbox.register("evaluate", partial)
-    toolbox.register("mate", tools.cxTwoPoint)
-    toolbox.register("mutate", tools.mutFlipBit, indpb=0.15)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("mate", tools.cxUniform, indpb=0.5)
+    toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.3)
+    toolbox.register("select", tools.selTournament, tournsize=5)
     
     return toolbox
 
-def optimize_flags(source_file, population_size=50, generations=10, stagnation_limit=5, plot_file="file_size_plot.png"):
+def optimize_flags(
+        source_file, 
+        population_size=80, 
+        generations=10, 
+        stagnation_limit=5, 
+        diversity_threshold=0.4,  
+        plot_file="file_size_plot.png"):
     """Main optimization function."""
     toolbox = create_toolbox(source_file)
     
     # Create initial population
     pop = hybrid_population(toolbox, population_size, source_file)
-    hof = tools.HallOfFame(1)
+    hof = tools.HallOfFame(3)
     
     # Statistics setup
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -102,7 +109,8 @@ def optimize_flags(source_file, population_size=50, generations=10, stagnation_l
                                     mutpb=0.4,
                                     ngen=1, stats=stats, halloffame=hof, verbose=True)
 
-        current_best = hof[0].fitness.values[0]
+        current_best = hof[random.randint(0,2)].fitness.values[0]
+        print(hof)
         if current_best < best_fitness:
             best_fitness = current_best
             stagnation_counter = 0
@@ -114,44 +122,23 @@ def optimize_flags(source_file, population_size=50, generations=10, stagnation_l
             pop = hybrid_population(toolbox, population_size, source_file) 
             stagnation_counter = 0
 
-    
-    # # Storage for file size per generation 
-    # file_sizes_per_generation = []
+        # Calculate diversity
+        active_flags = [[flag for flag, active in zip(FLAGS, ind) if active] for ind in pop]
+        diversity = len(set(tuple(sorted(flags)) for flags in active_flags)) / population_size
 
-    # # Run the evolution 
-    # for gen in range(generations):
-    #     # Evaluate population and perform genetic operations
-    #     pop, _ = algorithms.eaSimple(pop, toolbox, 
-    #                                  cxpb=0.7, #crossover probability 
-    #                                  mutpb=0.2, # Mutation probability
-    #                                  ngen=0, # Run one generation at a time 
-    #                                  stats=stats, 
-    #                                  halloffame=hof, 
-    #                                  verbose=True)
-    #
-    #     # Record file size statistics for this generation 
-    #     gen_sizes = [ind.fitness.values[0] for ind in pop]
-    #     min_size = np.min(gen_sizes)
-    #     file_sizes_per_generation.append(np.mean(gen_sizes))
-    #
-    #     # Print progress 
-    #     print(f"Generation {gen + 1}: Min Size = {min_size} bytes")
-    ##
-    ## Run the evolution
-    #pop, _ = algorithms.eaSimple(pop, toolbox,
-    #                                 cxpb=0.8,  # crossover probability
-    #                                 mutpb=0.3,  # mutation probability
-    #                                 ngen=generations,
-    #                                 stats=stats,
-    #                                 halloffame=hof,
-    #                                 verbose=True)
-    #
+        print(f"diversity: {diversity:.2f}")
+        if diversity < diversity_threshold:
+            print(f"Low diversity detected: {diversity:.2f}. Adding random individuals.")
+            new_individuals = toolbox.population(n=int(0.2 * population_size))
+            pop.extend(new_individuals)
+
+    
     # # Plot file size reduction 
     # plt.figure(figsize=(10,6))
     # plt.plot(range(1, generations + 1), file_sizes_per_generation, marker='o', label='Min Size per Generation')
     # plt.xlabel("Generation")
     # plt.ylabel("Compiled File Size (bytes)")
-    # plt.title("File Size Across Generations")
+    # plt.title("Average File Size Across Generations")
     # plt.legend()
     # plt.grid()
     #
